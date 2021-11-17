@@ -3,8 +3,12 @@
 namespace App\Controller;
 
 use App\Entity\Article;
+use App\Entity\Comment;
+use App\Form\ArticleType;
+use App\Form\CommentType;
 use App\Repository\ArticleRepository;
 use Doctrine\ORM\EntityManagerInterface;
+use Symfony\Bridge\Doctrine\Form\Type\EntityType;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -45,40 +49,41 @@ class BlogController extends AbstractController
         }
 
 
-        $form = $this->createFormBuilder($article)
-            ->add('title')
-            ->add('content')
-            ->add('image')
-            ->getForm();
-
+        $form = $this->createForm(ArticleType::class, $article);
         $form->handleRequest($request);
-
-        if($form->isSubmitted() && $form->isValid()){
-            if(!$article->getId()){
+        if ($form->isSubmitted() && $form->isValid()) {
+            if (!$article->getId()) {
                 $article->setCreateAt(new \DateTime());
             }
-
-
             $manager->persist($article);
             $manager->flush();
-
-            return $this->redirectToRoute('blog_show', ['id'=> $article->getId()]);
+            return $this->redirectToRoute('blog_show', ['id' => $article->getId()]);
         }
         return $this->render('blog/create.html.twig', [
             'formArticle' => $form->createView(),
             'editMode' => $article->getId() !== null
         ]);
     }
-
-    /**
-     * @Route ("/blog/{id}", name="blog_show")
-     */
-    public function show(Article $article)
-    {
-        return $this->renderForm('blog/show.html.twig', [
-            'article' => $article
-        ]);
-    }
-
+        /**
+         * @Route ("/blog/{id}", name="blog_show")
+         */
+        public function show(Article $article, Request $request, EntityManagerInterface $manager): Response
+        {
+            $comment = new Comment();
+            $form= $this->createForm(CommentType::class, $comment);
+            $form->handleRequest($request);
+            if ($form->isSubmitted() && $form->isValid()) {
+                $comment->setCreatedAt(new \DateTime())
+                        ->setArticle($article);
+                $manager->persist($comment);
+                $manager->flush();
+                return $this->redirectToRoute('blog_show', ['id' => $article->getId()]);
+                }
+            return $this->render('blog/show.html.twig', [
+                'article' => $article,
+                'commentForm' => $form->createView()
+            ]);
+        }
 
 }
+

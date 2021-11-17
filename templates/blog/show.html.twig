@@ -1,4 +1,6 @@
 {% extends 'base.html.twig' %}
+{% form_theme commentForm 'bootstrap_4_horizontal_layout.html.twig' %}
+
 {% block body %}
     <article>
 
@@ -10,6 +12,7 @@
         </div>
     </article>
     <section id="comments">
+        <h1>{{ article.comments | length }} commentaires : </h1>
         {% for comment in article.comments %}
         <div class="comment">
             <div class="row">
@@ -22,5 +25,15 @@
             </div>
         </div>
         {% endfor %}
+        {% if app.user %}
+        {{ form_start(commentForm) }}
+        {{ form_row(commentForm.author, {'attr': {'placeholder': "Votre nom"}}) }}
+        {{ form_row(commentForm.content, {'attr': {'placeholder': "Votre commentaire"}})  }}
+        <button type="submit" class="btn btn-success">Commentez</button>
+        {{ form_end(commentForm) }}
+        {% else %}
+            <h2>Vous ne pouvez pas commenter si vous n'êtes pas connecté </h2>
+        <a href="{{ path('auth_login') }}" class="btn btn-primary">Se connecter</a>
+        {% endif %}
     </section>
 {% endblock %}
